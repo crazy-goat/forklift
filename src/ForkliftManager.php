@@ -31,7 +31,7 @@ class ForkliftManager
         }
 
         $this->logger->info('Starting master process');
-        $this->logger->info('Found total of ' . count($this->processGroups) . ' process groups');;
+        $this->logger->info('Found total of ' . count($this->processGroups) . ' process groups');
 
         foreach ($this->processGroups as $processGroup) {
             $processGroup->withLogger($this->logger);
