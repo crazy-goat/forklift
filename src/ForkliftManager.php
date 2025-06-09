@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace CrazyGoat\Forklift;
 
+use CrazyGoat\Forklift\Exception\NotParentProcessException;
 use CrazyGoat\Forklift\Log\NullLogger;
+use JetBrains\PhpStorm\NoReturn;
 use Psr\Log\LoggerInterface;
 
 class ForkliftManager
@@ -19,77 +21,30 @@ class ForkliftManager
         $this->processGroups = $processGroups;
     }
 
-    private int $workerCount = 2;
-    private array $workers = [];
-
+    /**
+     * @throws NotParentProcessException
+     */
     public function start(): void
     {
-        if ($this->isMaster()) {
-            $this->startMaster();
-        } else {
-            $this->startWorker();
+        if (!Forklift::isParent()) {
+            throw new NotParentProcessException('Cannot start worker in child process');
         }
-    }
 
-    private function isMaster(): bool
-    {
-        return !isset($_ENV['WORKER_ID']);
-    }
-
-    private function startMaster(): void
-    {
         $this->logger->info('Starting master process');
-        $this->logger->info(sprintf("Worker count: %d", $this->workerCount));
         $this->logger->info('Found total of ' . count($this->processGroups) . ' process groups');;
+
         foreach ($this->processGroups as $processGroup) {
             $processGroup->withLogger($this->logger);
             $processGroup->run();
         }
         $this->setupSignalHandlers();
 
-        // Główna pętla master procesu
         while (true) {
             $this->logger->info('Master process dispatching signals');
             pcntl_signal_dispatch();
             $this->checkWorkers();
             sleep(1);
         }
-    }
-
-    private function startWorkerProcess(int $workerId): void
-    {
-        $pid = pcntl_fork();
-
-        if ($pid === -1) {
-            $this->logger->error('Cannot fork worker process');
-        } elseif ($pid !== 0) {
-            // Master process
-            $this->logger->info(sprintf('Started worker process %d', $pid));
-            $this->workers[$workerId] = $pid;
-            $this->setupSignalHandlers();
-        } else {
-            $this->logger->info(sprintf('Starting worker process %d', $pid));
-            $_ENV['WORKER_ID'] = $workerId;
-            $this->startWorker();
-            exit(0);
-        }
-    }
-
-    private function startWorker(): void
-    {
-        $this->logger->info('Clearing signal handlers for child process');
-        pcntl_signal(SIGINT, SIG_DFL);
-        pcntl_signal(SIGTERM, SIG_DFL);
-        pcntl_signal(SIGCHLD, SIG_IGN);
-
-        $workerId = $_ENV['WORKER_ID'];
-
-        while (true) {
-            $this->logger->info(sprintf('Hello world from worker #%d', $workerId));
-            pcntl_signal_dispatch();
-            sleep(1);
-        }
-
     }
 
     private function setupSignalHandlers(): void
@@ -101,18 +56,13 @@ class ForkliftManager
         $this->logger->info('Signal handlers set');
     }
 
+    #[NoReturn]
     public function handleShutdown($signal): void
     {
         $this->logger->info(sprintf('Received shutdown signal %d', $signal));
 
-        foreach ($this->workers as $workerId => $pid) {
-            $this->logger->info(sprintf('Closing worker #%d (PID: %d)', $workerId, $pid));
-            if (posix_kill($pid, SIGTERM) === false) {
-                $this->logger->error(sprintf("Cannot kill worker process, error:%s", posix_strerror(posix_get_last_error())));
-
-                continue;
-            }
-            pcntl_waitpid($pid, $status);
+        foreach ($this->processGroups as $processGroup) {
+            $processGroup->shutdown();
         }
 
         $this->logger->info('All workers closed');
@@ -121,19 +71,17 @@ class ForkliftManager
 
     public function checkWorkers(): void
     {
-        if ($this->isMaster()) {
+        if (Forklift::isParent()) {
             $needRestart = [];
             while (($pid = pcntl_waitpid(-1, $status, WNOHANG)) > 0) {
                 $this->logger->warning(sprintf('Worker process %d exited', $pid));
-                foreach ($this->workers as $workerId => $workerPid) {
-                    if ($pid === $workerPid) {
-                        $needRestart[] = $workerId;
-                    }
-                }
+                $needRestart[] = $pid;
             }
 
-            foreach ($needRestart as $workerId) {
-                $this->startWorkerProcess($workerId);
+            foreach ($needRestart as $pid) {
+                foreach ($this->processGroups as $processGroup) {
+                    $processGroup->restartProcessByPid($pid);
+                }
             }
         }
     }

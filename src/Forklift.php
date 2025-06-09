@@ -2,6 +2,8 @@
 
 namespace CrazyGoat\Forklift;
 
+use CrazyGoat\Forklift\Exception\NotChildProcessException;
+
 class Forklift
 {
     public static function isParent(): bool
@@ -14,8 +16,15 @@ class Forklift
         return isset($_ENV['FORKLIFT_CHILD']) && $_ENV['FORKLIFT_CHILD'] === '1';
     }
 
+    /**
+     * @throws NotChildProcessException
+     */
     public static function processNumber(): int
     {
-        return (int) ($_ENV['FORKLIFT_PROCESS_NUMBER'] ?? 0);
+        if (!self::isChild() || !isset($_ENV['FORKLIFT_PROCESS_NUMBER'])) {
+            throw new NotChildProcessException();
+        }
+
+        return intval($_ENV['FORKLIFT_PROCESS_NUMBER']);
     }
 }

@@ -35,4 +35,9 @@ class Process
             return null;
         }
     }
+
+    public function processNumber(): int
+    {
+        return $this->processNumber;
+    }
 }
