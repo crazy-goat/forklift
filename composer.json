@@ -2,6 +2,7 @@
     "name": "crazy-goat/forklift",
     "type": "library",
     "license": "MIT",
+    "description": "Forklift is a lightweight process manager for PHP.",
     "autoload": {
         "psr-4": {
             "CrazyGoat\\Forklift\\": "src/"
