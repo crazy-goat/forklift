@@ -11,7 +11,7 @@ class Process
     /** @var callable */
     private $callback;
 
-    public function __construct(private int $processNumber, $callback)
+    public function __construct(private int $processNumber, callable $callback)
     {
         $this->callback = $callback;
     }

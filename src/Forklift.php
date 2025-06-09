@@ -27,6 +27,10 @@ class Forklift
             throw new NotChildProcessException();
         }
 
-        return intval($_ENV['FORKLIFT_PROCESS_NUMBER']);
+        if (is_scalar($_ENV['FORKLIFT_PROCESS_NUMBER'])) {
+            return intval($_ENV['FORKLIFT_PROCESS_NUMBER']);
+        }
+
+        throw new \InvalidArgumentException('Invalid process number');
     }
 }

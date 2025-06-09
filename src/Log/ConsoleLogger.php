@@ -50,6 +50,10 @@ class ConsoleLogger implements LoggerInterface
 
     public function log($level, string|\Stringable $message, array $context = []): void
     {
+        if (!is_string($level)) {
+            throw new \InvalidArgumentException('Level must be a scalar value');
+        }
+
         $path = 'php://stdout';
         if (in_array($level, ['warning', 'error', 'critical', 'alert', 'emergency'], true)) {
             $path = 'php://stderr';

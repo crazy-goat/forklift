@@ -6,7 +6,6 @@ namespace CrazyGoat\Forklift;
 
 use CrazyGoat\Forklift\Exception\NotParentProcessException;
 use CrazyGoat\Forklift\Log\NullLogger;
-use JetBrains\PhpStorm\NoReturn;
 use Psr\Log\LoggerInterface;
 
 class ForkliftManager
@@ -14,8 +13,9 @@ class ForkliftManager
     private LoggerInterface $logger;
     /** @var ProcessGroup[] */
     private array $processGroups;
+    private bool $shutdown = false;
 
-    public function __construct(LoggerInterface $logger = null, ProcessGroup ...$processGroups)
+    public function __construct(?LoggerInterface $logger = null, ProcessGroup ...$processGroups)
     {
         $this->logger = $logger ?? new NullLogger();
         $this->processGroups = $processGroups;
@@ -39,12 +39,14 @@ class ForkliftManager
         }
         $this->setupSignalHandlers();
 
-        while (true) {
+        while ($this->shutdown === false) {
             $this->logger->info('Master process dispatching signals');
             pcntl_signal_dispatch();
             $this->checkWorkers();
             sleep(1);
         }
+
+        $this->logger->info('Master process finished');
     }
 
     private function setupSignalHandlers(): void
@@ -56,8 +58,7 @@ class ForkliftManager
         $this->logger->info('Signal handlers set');
     }
 
-    #[NoReturn]
-    public function handleShutdown($signal): void
+    public function handleShutdown(int $signal): void
     {
         $this->logger->info(sprintf('Received shutdown signal %d', $signal));
 
@@ -66,7 +67,7 @@ class ForkliftManager
         }
 
         $this->logger->info('All workers closed');
-        exit(0);
+        $this->shutdown = true;
     }
 
     public function checkWorkers(): void
