@@ -10,10 +10,13 @@ use Psr\Log\LoggerInterface;
 class ForkliftManager
 {
     private LoggerInterface $logger;
+    /** @var ProcessGroup[] */
+    private array $processGroups;
 
-    public function __construct(LoggerInterface $logger = null)
+    public function __construct(LoggerInterface $logger = null, ProcessGroup ...$processGroups)
     {
         $this->logger = $logger ?? new NullLogger();
+        $this->processGroups = $processGroups;
     }
 
     private int $workerCount = 2;
@@ -37,10 +40,10 @@ class ForkliftManager
     {
         $this->logger->info('Starting master process');
         $this->logger->info(sprintf("Worker count: %d", $this->workerCount));
-
-        // Uruchamianie worker procesów
-        for ($i = 1; $i <= $this->workerCount; $i++) {
-            $this->startWorkerProcess($i);
+        $this->logger->info('Found total of ' . count($this->processGroups) . ' process groups');;
+        foreach ($this->processGroups as $processGroup) {
+            $processGroup->withLogger($this->logger);
+            $processGroup->run();
         }
         $this->setupSignalHandlers();
 
@@ -49,7 +52,7 @@ class ForkliftManager
             $this->logger->info('Master process dispatching signals');
             pcntl_signal_dispatch();
             $this->checkWorkers();
-            sleep(5);
+            sleep(1);
         }
     }
 

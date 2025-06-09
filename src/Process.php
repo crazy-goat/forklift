@@ -22,12 +22,15 @@ class Process
         $pid = pcntl_fork();
 
         if ($pid === -1) {
-            throw new ForkCreatedException('Cannot fork process');
+            $message = pcntl_strerror(pcntl_get_last_error());
+            throw new ForkCreatedException(sprintf("Cannot fork process: %s", $message));
         } elseif ($pid !== 0) {
             // Parent process
             return $pid;
         } else {
             // Child process
+            $_ENV['FORKLIFT_PROCESS_NUMBER'] = $this->processNumber;
+            $_ENV['FORKLIFT_CHILD'] = '1';
             ($this->callback)($this->processNumber);
             return null;
         }
