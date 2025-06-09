@@ -31,8 +31,7 @@ class Process
             return $pid;
         } else {
             // Child process
-            $_ENV['FORKLIFT_PROCESS_NUMBER'] = $this->processNumber;
-            $_ENV['FORKLIFT_CHILD'] = '1';
+            Forklift::setProcessNumber($this->processNumber);
             ($this->callback)($this->processNumber);
             return null;
         }
