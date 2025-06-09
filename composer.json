@@ -1,0 +1,34 @@
+{
+    "name": "crazy-goat/forklift",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "CrazyGoat\\Forklift\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Hałas Piotr",
+            "email": "halaspiotr@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "psr/log": "^3.0"
+    },
+    "require-dev": {
+        "php-cs-fixer/shim": "^3.75",
+        "rector/rector": "^2.0"
+    },
+    "scripts": {
+        "lint-fix": [
+            "PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/php-cs-fixer fix -v",
+            "vendor/bin/rector process"
+        ],
+        "lint": [
+            "PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/php-cs-fixer fix -v --dry-run",
+            "vendor/bin/rector process --dry-run"
+        ]
+    }
+}
