@@ -2,9 +2,15 @@
     "name": "crazy-goat/forklift",
     "type": "library",
     "license": "MIT",
+    "description": "Forklift is a lightweight process manager for PHP.",
     "autoload": {
         "psr-4": {
             "CrazyGoat\\Forklift\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CrazyGoat\\Forklift\\Tests\\": "tests/"
         }
     },
     "authors": [
@@ -21,9 +27,13 @@
     },
     "require-dev": {
         "php-cs-fixer/shim": "^3.75",
-        "rector/rector": "^2.0"
+        "rector/rector": "^2.0",
+        "phpunit/phpunit": "^9.5"
     },
     "scripts": {
+        "test": [
+            "vendor/bin/phpunit"
+        ],
         "lint-fix": [
             "PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/php-cs-fixer fix -v",
             "vendor/bin/rector process"
