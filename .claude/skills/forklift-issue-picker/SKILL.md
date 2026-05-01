@@ -20,7 +20,7 @@ Issues are labelled `MxIxx` where `Mx` = milestone number and `Ixx` = issue numb
 3. **Feature branch** → `feature/m<M>i<I>-<slug>`
 4. **Implement** → code + tests + `composer lint && composer test`
 5. **Push + PR** → `gh pr create` with summary + acceptance checklist + `Closes #N`
-6. **CI green?** → no: fix and re-push. yes: run **forklift-review** skill (4 parallel stages: code smells, security, issue compliance, follow-ups → inline comments → author fixes or explains → re-check up to 3 rounds → all resolved = approved)
+6. **CI green?** → no: fix and re-push. yes: use **`/review-pr`** command (dispatches forklift-review as subagent)
 7. **Wait for human approval** → check that someone OTHER than the PR author has approved. If not, ask the user to review.
 8. **Squash merge** → `gh pr merge --squash`
 9. **Loop** → back to clean main
@@ -85,11 +85,8 @@ gh pr create \
 gh pr checks --watch
 ```
 - Fix CI failures on the branch
-- **Run forklift-review** once CI is green — use the `forklift-review` skill which runs 4 parallel stages (code smells, security, issue compliance, follow-ups), posts inline PR comments, and iterates until all findings are resolved:
-  - Author fixes the code or explains the reasoning
-  - Review re-checks unresolved threads (up to 3 rounds)
-  - Each round provides more detailed descriptions for unfixed issues
-- **Do NOT merge before the review loop completes** — the review is the gatekeeper
+- Once CI is green, dispatch **`/review-pr <PR-number>`** command using the Task tool with `forklift-review` subagent. The subagent runs 4 parallel stages (code smells, security, issue compliance, follow-ups), posts inline PR comments, and iterates until all findings are resolved.
+- **Do NOT merge before the review completes** — the review is the gatekeeper
 
 ### 7. Wait for human approval (guard)
 
@@ -116,6 +113,24 @@ git checkout main && git pull origin main
 # → back to step 1
 ```
 
+## `/review-pr` command
+
+Dispatches forklift-review as a subagent for a PR with the given number.
+
+```
+/review-pr <PR-number>
+```
+
+**Usage:** `Task` tool, `forklift-review` subagent. The PR number MUST be passed in the prompt:
+```
+Task(
+  subagent_type: "forklift-review",
+  prompt: "Review PR #<N> using forklift-review skill"
+)
+```
+
+The subagent loads the forklift-review skill, fetches the PR diff + linked issue via `gh pr view <N>` and `gh pr diff <N>`, runs 4 parallel stages (code smells, security, issue compliance, follow-ups), posts inline PR comments, and iterates up to 3 rounds until all findings are resolved or explained.
+
 ## PR conventions
 
 | Field | Format |
@@ -131,6 +146,6 @@ git checkout main && git pull origin main
 - Leaving uncommitted changes when creating PR
 - Not watching CI after pushing fixes
 - Branch name not matching the issue it solves
-- **Merging without external review** — always wait for approval from someone OTHER than the author. Self-review via forklift-review does NOT count.
+- **Merging without external review** — always wait for approval from someone OTHER than the author. Review via `/review-pr` does NOT count as human approval.
 - **Checking `gh pr view --json reviews` before merge** — always verify an external person approved before running `gh pr merge`
 - **Typos in YAML variable references** — double-check `${{ matrix.key }}` matches the actual key name (singular vs plural)
