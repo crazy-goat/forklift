@@ -61,13 +61,7 @@ class MasterProxy implements SocketProxyInterface
             );
         }
 
-        $receiveSocket = \socket_import_stream($streams[1]);
-
-        if ($receiveSocket === false) {
-            throw new SocketCreationException(
-                \socket_strerror(\socket_last_error()),
-            );
-        }
+        \fclose($streams[1]);
 
         $this->sendSocket = $sendSocket;
 
