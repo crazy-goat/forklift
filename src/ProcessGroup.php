@@ -63,7 +63,7 @@ class ProcessGroup
         }
     }
 
-    public function restartProcessByPid(mixed $pid): void
+    public function restartProcessByPid(int $pid): void
     {
         if (isset($this->pidMap[$pid])) {
             try {
