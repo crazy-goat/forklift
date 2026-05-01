@@ -24,10 +24,6 @@ class ReusePortProxyTest extends TestCase
     {
         $proxy = new ReusePortProxy();
 
-        if (!$proxy->isSupported()) {
-            $this->markTestSkipped('SO_REUSEPORT is not supported on this platform');
-        }
-
         $socket = $proxy->createSocket(0, ProtocolType::TCP);
 
         $this->assertInstanceOf(Socket::class, $socket);
@@ -38,10 +34,6 @@ class ReusePortProxyTest extends TestCase
     public function testAcceptReturnsConnection(): void
     {
         $proxy = new ReusePortProxy();
-
-        if (!$proxy->isSupported()) {
-            $this->markTestSkipped('SO_REUSEPORT is not supported on this platform');
-        }
 
         $socket = $proxy->createSocket(0, ProtocolType::TCP);
 
