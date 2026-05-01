@@ -21,7 +21,10 @@ class Connection
         }
 
         $data = \socket_read($this->resource, $length);
-        $this->lastActivity = \microtime(true);
+
+        if ($data !== false) {
+            $this->lastActivity = \microtime(true);
+        }
 
         return $data;
     }
@@ -33,7 +36,10 @@ class Connection
         }
 
         $result = \socket_write($this->resource, $data, strlen($data));
-        $this->lastActivity = \microtime(true);
+
+        if ($result !== false) {
+            $this->lastActivity = \microtime(true);
+        }
 
         return $result;
     }
@@ -54,7 +60,13 @@ class Connection
     /** @return array{host: string, port: int} */
     public function getPeerName(): array
     {
-        \socket_getpeername($this->resource, $addr, $port);
+        if ($this->closed) {
+            throw new \RuntimeException('Connection is closed');
+        }
+
+        if (!\socket_getpeername($this->resource, $addr, $port)) {
+            throw new \RuntimeException('Failed to get peer name');
+        }
 
         /** @var string $addr */
         /** @var int $port */
@@ -73,6 +85,10 @@ class Connection
             return;
         }
 
-        \socket_set_option($this->resource, $level, $option, $value);
+        if (\socket_set_option($this->resource, $level, $option, $value) === false) {
+            throw new \RuntimeException(
+                \socket_strerror(\socket_last_error($this->resource)),
+            );
+        }
     }
 }

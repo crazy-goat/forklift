@@ -46,7 +46,11 @@ class Socket
             throw new SocketCreationException('Socket is closed');
         }
 
-        \socket_set_option($this->resource, $level, $option, $value);
+        if (\socket_set_option($this->resource, $level, $option, $value) === false) {
+            throw new SocketCreationException(
+                \socket_strerror(\socket_last_error($this->resource)),
+            );
+        }
     }
 
     public function bind(string $address, int $port): void

@@ -43,14 +43,14 @@ class SocketTest extends TestCase
         $resource = \socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         $this->assertNotFalse($resource);
 
-        \socket_set_option($resource, SOL_SOCKET, SO_REUSEADDR, 1);
-        \socket_bind($resource, '127.0.0.1', 0);
+        $socket = new Socket($resource);
+        $socket->setOption(SOL_SOCKET, SO_REUSEADDR, 1);
+        $socket->bind('127.0.0.1', 0);
+        $socket->listen();
+
         \socket_getsockname($resource, $addr, $port);
         $this->assertIsString($addr);
         $this->assertIsInt($port);
-
-        \socket_listen($resource);
-        $socket = new Socket($resource);
 
         $client = \socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         $this->assertNotFalse($client);
@@ -75,6 +75,10 @@ class SocketTest extends TestCase
 
         $socket->close();
         $socket->close();
+
+        $reflection = new ReflectionProperty(Socket::class, 'resource');
+
+        $this->assertNull($reflection->getValue($socket));
     }
 
     public function testCloseSetsResourceToNull(): void
