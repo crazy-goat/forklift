@@ -268,7 +268,7 @@ class ConnectionTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
 
-        $connection->setOption(SOL_SOCKET, SO_RCVBUF, -1);
+        $connection->setOption(SOL_SOCKET, 99999, 0);
 
         \socket_close($resource);
     }
