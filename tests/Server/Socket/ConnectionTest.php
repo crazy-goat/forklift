@@ -154,6 +154,21 @@ class ConnectionTest extends TestCase
         $connection->getPeerName();
     }
 
+    public function testGetPeerNameThrowsOnFailedSocketCall(): void
+    {
+        $resource = \socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+        $this->assertNotFalse($resource);
+
+        $connection = new Connection($resource);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Failed to get peer name');
+
+        $connection->getPeerName();
+
+        \socket_close($resource);
+    }
+
     public function testGetLastActivityUpdatedOnRead(): void
     {
         /** @var Connection $connection */
@@ -242,6 +257,20 @@ class ConnectionTest extends TestCase
 
         $this->assertNull($exception, 'setOption should not throw when connection is closed');
         $this->assertTrue($connection->isClosed());
+    }
+
+    public function testSetOptionThrowsOnFailedSocketCall(): void
+    {
+        $resource = \socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        $this->assertNotFalse($resource);
+
+        $connection = new Connection($resource);
+
+        $this->expectException(\RuntimeException::class);
+
+        $connection->setOption(SOL_SOCKET, SO_RCVBUF, -1);
+
+        \socket_close($resource);
     }
 
     public function testDefaultReadLength(): void

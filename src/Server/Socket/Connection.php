@@ -64,7 +64,7 @@ class Connection
             throw new \RuntimeException('Connection is closed');
         }
 
-        if (!\socket_getpeername($this->resource, $addr, $port)) {
+        if (!@\socket_getpeername($this->resource, $addr, $port)) {
             throw new \RuntimeException('Failed to get peer name');
         }
 
@@ -85,7 +85,7 @@ class Connection
             return;
         }
 
-        if (\socket_set_option($this->resource, $level, $option, $value) === false) {
+        if (@\socket_set_option($this->resource, $level, $option, $value) === false) {
             throw new \RuntimeException(
                 \socket_strerror(\socket_last_error($this->resource)),
             );
