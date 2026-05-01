@@ -24,7 +24,7 @@ class ConnectionTest extends TestCase
         $this->assertNotFalse($client);
         /** @var string $addr */
         /** @var int $port */
-        \socket_connect($client, $addr, $port);
+        $this->assertNotFalse(\socket_connect($client, $addr, $port));
 
         $accepted = \socket_accept($srv);
         $this->assertNotFalse($accepted);
@@ -110,7 +110,7 @@ class ConnectionTest extends TestCase
 
         $this->assertFalse($connection->isClosed());
 
-        \socket_close($resource);
+        $connection->close();
     }
 
     public function testIsClosedReturnsTrueAfterClose(): void
@@ -161,7 +161,7 @@ class ConnectionTest extends TestCase
         [$connection, $client] = $this->createConnectedPair();
 
         $before = $connection->getLastActivity();
-        \usleep(1);
+        \usleep(10_000);
 
         \socket_write($client, 'x', 1);
         $connection->read(1);
@@ -181,7 +181,7 @@ class ConnectionTest extends TestCase
         [$connection, $client] = $this->createConnectedPair();
 
         $before = $connection->getLastActivity();
-        \usleep(1);
+        \usleep(10_000);
 
         $connection->write('x');
 
