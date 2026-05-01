@@ -19,7 +19,7 @@ class ProcessGroup
     private $callback;
     private LoggerInterface $logger;
 
-    public function __construct(private string $name, private int $size, callable $callback)
+    public function __construct(private readonly string $name, private readonly int $size, callable $callback)
     {
         $this->callback = $callback;
         $this->logger = new NullLogger();

@@ -10,5 +10,21 @@
     "plan": {
       "model": "opencode-go/deepseek-v4-pro"
     }
+  },
+  "command": {
+    "pick-issue": {
+      "template": "Use the forklift-issue-picker skill to pick the next open issue from GitHub, create a feature branch, and prepare a PR.",
+      "description": "Pick the next Forklift issue and create a feature branch + PR",
+      "agent": "build",
+      "model": "opencode-go/deepseek-v4-pro",
+      "subtask": true
+    },
+    "review-pr": {
+      "template": "Review PR $ARGUMENTS. Fetch the PR diff, read full file context, and check for bugs, logic errors, security issues, and edge cases. Output a structured review with severity per issue.",
+      "description": "Review a PR (e.g. /review-pr 53)",
+      "agent": "build",
+      "model": "opencode-go/deepseek-v4-pro",
+      "subtask": true
+    }
   }
 }

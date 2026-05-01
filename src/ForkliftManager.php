@@ -10,9 +10,9 @@ use Psr\Log\LoggerInterface;
 
 class ForkliftManager
 {
-    private LoggerInterface $logger;
+    private readonly LoggerInterface $logger;
     /** @var ProcessGroup[] */
-    private array $processGroups;
+    private readonly array $processGroups;
     private bool $shutdown = false;
 
     public function __construct(?LoggerInterface $logger = null, ProcessGroup ...$processGroups)
@@ -52,9 +52,9 @@ class ForkliftManager
     private function setupSignalHandlers(): void
     {
         $this->logger->info('Setting up signal handlers');
-        pcntl_signal(SIGINT, [$this, 'handleShutdown']);
-        pcntl_signal(SIGTERM, [$this, 'handleShutdown']);
-        pcntl_signal(SIGCHLD, [$this, 'checkWorkers']);
+        pcntl_signal(SIGINT, $this->handleShutdown(...));
+        pcntl_signal(SIGTERM, $this->handleShutdown(...));
+        pcntl_signal(SIGCHLD, $this->checkWorkers(...));
         $this->logger->info('Signal handlers set');
     }
 
