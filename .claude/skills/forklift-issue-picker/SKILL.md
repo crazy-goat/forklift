@@ -7,37 +7,22 @@ description: Use when working on Forklift issues in MxIxx format — picking the
 
 ## Overview
 
-Issues are labelled `MxIxx` where `Mx` = milestone number and `Ixx` = issue number. Always pick the open issue with the **lowest milestone number**, then the **lowest issue number** within that milestone.
+Issues are labelled `MxIxx` where `Mx` = milestone number and `Ixx` = issue number. The skill has two modes:
+
+**Auto-pick (default):** Automatically selects the open issue with the **lowest milestone number**, then the **lowest issue number** within that milestone.
+
+**List mode:** When called with `list` argument, displays all open issues in a table ordered by milestone then issue number, and lets the user pick which one to work on.
 
 ## Workflow
 
-```dot
-digraph workflow {
-    "Clean main" [shape=box];
-    "Pick next issue\n(lowest M + I)" [shape=diamond];
-    "Feature branch\nfeature/m<M>i<I>-<slug>" [shape=box];
-    "Implement + test + lint" [shape=box];
-    "Push + PR" [shape=box];
-    "CI green?" [shape=diamond];
-    "Wait for review" [shape=box];
-    "Approved?" [shape=diamond];
-    "Handle reviews" [shape=box];
-    "Squash merge" [shape=box];
-    "Back to main" [shape=box];
-
-    "Clean main" -> "Pick next issue\n(lowest M + I)";
-    "Pick next issue\n(lowest M + I)" -> "Feature branch\nfeature/m<M>i<I>-<slug>";
-    "Feature branch\nfeature/m<M>i<I>-<slug>" -> "Implement + test + lint";
-    "Implement + test + lint" -> "Push + PR";
-    "Push + PR" -> "CI green?";
-    "CI green?" -> "Wait for review" [label="yes"];
-    "CI green?" -> "Implement + test + lint" [label="no, fix"];
-    "Wait for review" -> "Approved?";
-    "Approved?" -> "Handle reviews" [label="no, changes requested"];
-    "Approved?" -> "Squash merge" [label="yes"];
-    "Handle reviews" -> "CI green?" [label="changes pushed"];
-}
-```
+1. **Clean main** → fetch & pull
+2. **Pick issue** → lowest milestone, then lowest issue number
+3. **Feature branch** → `feature/m<M>i<I>-<slug>`
+4. **Implement** → code + tests + `composer lint && composer test`
+5. **Push + PR** → `gh pr create` with summary + acceptance checklist + `Closes #N`
+6. **CI green?** → no: fix and re-push. yes: run **forklift-review** skill (4 parallel stages: code smells, security, issue compliance, follow-ups → inline comments → author fixes or explains → re-check up to 3 rounds → all resolved = approved)
+7. **Squash merge** → `gh pr merge --squash`
+8. **Loop** → back to clean main
 
 ## Steps
 
@@ -49,11 +34,27 @@ git pull origin main
 ```
 
 ### 2. Pick the next issue
+
+**Auto-pick mode (default):** Picks the lowest milestone + lowest issue number automatically.
+
 ```bash
 gh issue list --state open --json number,title,milestone --jq '
   sort_by(.milestone.number, .number) | .[0] | {number, title}
 '
 ```
+
+**List mode (`list` argument):** Displays all open issues and lets the user pick.
+
+```bash
+gh issue list --state open --json number,title,milestone,labels --jq '
+  sort_by(.milestone.number, .number) |
+  ["#", "Milestone", "Title", "Labels"],
+  (.[] | [.number, .milestone.title, .title, (.labels[].name // "-")]) |
+  @tsv
+' | column -t -s $'\t'
+```
+
+Present the table to the user and ask which issue number to work on. Then proceed with that issue.
 
 ### 3. Create feature branch
 ```bash
@@ -78,14 +79,16 @@ gh pr create \
 ```
 
 ### 6. CI and reviews
+
 ```bash
 gh pr checks --watch
 ```
 - Fix CI failures on the branch
-- **Wait for review before merging** — do NOT merge immediately after CI passes
-- Read review comments with `gh pr view` or the review tool
-- Address all feedback, reply with explanations
-- Only merge after approval
+- **Run forklift-review** once CI is green — use the `forklift-review` skill which runs 4 parallel stages (code smells, security, issue compliance, follow-ups), posts inline PR comments, and iterates until all findings are resolved:
+  - Author fixes the code or explains the reasoning
+  - Review re-checks unresolved threads (up to 3 rounds)
+  - Each round provides more detailed descriptions for unfixed issues
+- **Do NOT merge before the review loop completes** — the review is the gatekeeper
 
 ### 7. Merge (after approval)
 ```bash

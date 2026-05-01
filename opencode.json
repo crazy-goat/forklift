@@ -13,18 +13,14 @@
   },
   "command": {
     "pick-issue": {
-      "template": "Use the forklift-issue-picker skill to pick the next open issue from GitHub, create a feature branch, and prepare a PR.",
-      "description": "Pick the next Forklift issue and create a feature branch + PR",
-      "agent": "build",
-      "model": "opencode-go/deepseek-v4-pro",
-      "subtask": true
+      "template": "If $ARGUMENTS equals 'list': use the forklift-issue-picker skill to list all open issues from GitHub ordered by milestone and issue number, present a table, and let the user pick which one to work on — then proceed with that issue. Otherwise (no argument): use the forklift-issue-picker skill to auto-pick the next open issue (lowest milestone + issue number), create a feature branch, and prepare a PR.",
+      "description": "Pick the next Forklift issue (default) or list open issues (list)",
+      "agent": "build-fast"
     },
     "review-pr": {
-      "template": "Review PR $ARGUMENTS. Fetch the PR diff, read full file context, and check for bugs, logic errors, security issues, and edge cases. Output a structured review with severity per issue.",
-      "description": "Review a PR (e.g. /review-pr 53)",
-      "agent": "build",
-      "model": "opencode-go/deepseek-v4-pro",
-      "subtask": true
+      "template": "Use the forklift-review skill to review PR $ARGUMENTS. Run all 4 stages in parallel, post inline comments, and iterate until resolved.",
+      "description": "Review a PR using forklift-review skill (e.g. /review-pr 53)",
+      "agent": "build"
     }
   }
 }
