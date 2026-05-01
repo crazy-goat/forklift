@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CrazyGoat\Forklift\Server\Socket;
 
+use CrazyGoat\Forklift\Server\Exception\SocketAcceptException;
 use CrazyGoat\Forklift\Server\Exception\SocketCreationException;
 use CrazyGoat\Forklift\Server\Types\ProtocolType;
 
@@ -49,6 +50,8 @@ class MasterProxy implements SocketProxyInterface
             );
         }
 
+        \fclose($streams[1]);
+
         $this->sendSocket = $sendSocket;
 
         return $socket;
@@ -56,10 +59,20 @@ class MasterProxy implements SocketProxyInterface
 
     public function accept(Socket $socket): Connection
     {
-        $connection = $socket->accept();
+        $listeningReflection = new \ReflectionProperty(Socket::class, 'resource');
+        $listeningResource = $listeningReflection->getValue($socket);
 
-        $reflection = new \ReflectionProperty(Connection::class, 'resource');
-        $acceptedSocket = $reflection->getValue($connection);
+        if (!$listeningResource instanceof \Socket) {
+            throw new SocketAcceptException('Socket is closed');
+        }
+
+        $accepted = @\socket_accept($listeningResource);
+
+        if ($accepted === false) {
+            throw new SocketAcceptException(
+                \socket_strerror(\socket_last_error($listeningResource)),
+            );
+        }
 
         @\socket_sendmsg($this->sendSocket, [
             'iov' => [' '],
@@ -67,12 +80,12 @@ class MasterProxy implements SocketProxyInterface
                 [
                     'cmsg_level' => \SOL_SOCKET,
                     'cmsg_type' => \SCM_RIGHTS,
-                    'cmsg_data' => $acceptedSocket,
+                    'cmsg_data' => $accepted,
                 ],
             ],
         ]);
 
-        return $connection;
+        return new Connection($accepted);
     }
 
     public function isSupported(): bool
