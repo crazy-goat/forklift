@@ -85,7 +85,7 @@ gh pr create \
 gh pr checks --watch
 ```
 - Fix CI failures on the branch
-- Once CI is green, dispatch **`/review-pr <PR-number>`** command using the Task tool with `forklift-review` subagent. The subagent runs 4 parallel stages (code smells, security, issue compliance, follow-ups), posts inline PR comments, and iterates until all findings are resolved.
+- Once CI is green, dispatch **`/review-pr <PR-number>`** command using the Task tool with `build` subagent. The subagent loads the forklift-review skill, runs 4 parallel stages (code smells, security, issue compliance, follow-ups), posts inline PR comments, and iterates until all findings are resolved.
 - **Do NOT merge before the review completes** — the review is the gatekeeper
 
 ### 7. Wait for human approval (guard)
@@ -121,11 +121,11 @@ Dispatches forklift-review as a subagent for a PR with the given number.
 /review-pr <PR-number>
 ```
 
-**Usage:** `Task` tool, `forklift-review` subagent. The PR number MUST be passed in the prompt:
+**Usage:** `Task` tool with `build` subagent type. The PR number MUST be passed in the prompt:
 ```
 Task(
-  subagent_type: "forklift-review",
-  prompt: "Review PR #<N> using forklift-review skill"
+  subagent_type: "build",
+  prompt: "Review PR #<N>. First, load the forklift-review skill (.claude/skills/forklift-review/SKILL.md), then follow its instructions to review this PR."
 )
 ```
 
