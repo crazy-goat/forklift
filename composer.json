@@ -21,6 +21,7 @@
     ],
     "minimum-stability": "stable",
     "require": {
+        "php": ">=8.2",
         "ext-pcntl": "*",
         "ext-posix": "*",
         "psr/log": "^3.0"
