@@ -21,8 +21,9 @@ Issues are labelled `MxIxx` where `Mx` = milestone number and `Ixx` = issue numb
 4. **Implement** → code + tests + `composer lint && composer test`
 5. **Push + PR** → `gh pr create` with summary + acceptance checklist + `Closes #N`
 6. **CI green?** → no: fix and re-push. yes: run **forklift-review** skill (4 parallel stages: code smells, security, issue compliance, follow-ups → inline comments → author fixes or explains → re-check up to 3 rounds → all resolved = approved)
-7. **Squash merge** → `gh pr merge --squash`
-8. **Loop** → back to clean main
+7. **Wait for human approval** → check that someone OTHER than the PR author has approved. If not, ask the user to review.
+8. **Squash merge** → `gh pr merge --squash`
+9. **Loop** → back to clean main
 
 ## Steps
 
@@ -90,12 +91,26 @@ gh pr checks --watch
   - Each round provides more detailed descriptions for unfixed issues
 - **Do NOT merge before the review loop completes** — the review is the gatekeeper
 
-### 7. Merge (after approval)
+### 7. Wait for human approval (guard)
+
+**Do NOT merge without human review.** The forklift-review skill run by the code author does NOT count as approval — only a review from another person (the user or another contributor) counts.
+
+Before proceeding to merge, verify external approval:
+```bash
+gh api repos/crazy-goat/forklift/pulls/<N>/reviews --jq '
+  [.[] | select(.state == "APPROVED" and .author.login != "crazy-goat[bot]")]
+  | if length > 0 then "APPROVED by \(.[0].author.login)" else "NO_EXTERNAL_APPROVAL" end
+'
+```
+
+If the result is `NO_EXTERNAL_APPROVAL`, stop and ask the user to review the PR. Do NOT merge.
+
+### 8. Merge (after human approval)
 ```bash
 gh pr merge --squash --subject "M<M>I<I>: <title>"
 ```
 
-### 8. Loop
+### 9. Loop
 ```bash
 git checkout main && git pull origin main
 # → back to step 1
@@ -116,5 +131,6 @@ git checkout main && git pull origin main
 - Leaving uncommitted changes when creating PR
 - Not watching CI after pushing fixes
 - Branch name not matching the issue it solves
-- **Merging without waiting for review** — always wait for approval
+- **Merging without external review** — always wait for approval from someone OTHER than the author. Self-review via forklift-review does NOT count.
+- **Checking `gh pr view --json reviews` before merge** — always verify an external person approved before running `gh pr merge`
 - **Typos in YAML variable references** — double-check `${{ matrix.key }}` matches the actual key name (singular vs plural)
