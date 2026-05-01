@@ -32,6 +32,12 @@
         "phpunit/phpunit": "^9.5"
     },
     "scripts": {
+        "post-install-cmd": [
+            "bash bin/install-hooks"
+        ],
+        "post-update-cmd": [
+            "bash bin/install-hooks"
+        ],
         "test": [
             "vendor/bin/phpunit"
         ],
