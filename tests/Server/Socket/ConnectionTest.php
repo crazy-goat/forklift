@@ -233,8 +233,14 @@ class ConnectionTest extends TestCase
         $connection = new Connection($resource);
         $connection->close();
 
-        $connection->setOption(SOL_SOCKET, SO_RCVTIMEO, 1);
+        $exception = null;
+        try {
+            $connection->setOption(SOL_SOCKET, SO_REUSEADDR, 1);
+        } catch (\Throwable $e) {
+            $exception = $e;
+        }
 
+        $this->assertNull($exception, 'setOption should not throw when connection is closed');
         $this->assertTrue($connection->isClosed());
     }
 
