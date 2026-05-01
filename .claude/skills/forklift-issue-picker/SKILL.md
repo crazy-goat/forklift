@@ -19,6 +19,8 @@ digraph workflow {
     "Implement + test + lint" [shape=box];
     "Push + PR" [shape=box];
     "CI green?" [shape=diamond];
+    "Wait for review" [shape=box];
+    "Approved?" [shape=diamond];
     "Handle reviews" [shape=box];
     "Squash merge" [shape=box];
     "Back to main" [shape=box];
@@ -28,11 +30,12 @@ digraph workflow {
     "Feature branch\nfeature/m<M>i<I>-<slug>" -> "Implement + test + lint";
     "Implement + test + lint" -> "Push + PR";
     "Push + PR" -> "CI green?";
-    "CI green?" -> "Handle reviews" [label="yes"];
+    "CI green?" -> "Wait for review" [label="yes"];
     "CI green?" -> "Implement + test + lint" [label="no, fix"];
-    "Handle reviews" -> "CI green?" [label="changes made"];
-    "Handle reviews" -> "Squash merge" [label="approved"];
-    "Squash merge" -> "Back to main";
+    "Wait for review" -> "Approved?";
+    "Approved?" -> "Handle reviews" [label="no, changes requested"];
+    "Approved?" -> "Squash merge" [label="yes"];
+    "Handle reviews" -> "CI green?" [label="changes pushed"];
 }
 ```
 
@@ -79,10 +82,12 @@ gh pr create \
 gh pr checks --watch
 ```
 - Fix CI failures on the branch
+- **Wait for review before merging** — do NOT merge immediately after CI passes
 - Read review comments with `gh pr view` or the review tool
 - Address all feedback, reply with explanations
+- Only merge after approval
 
-### 7. Merge
+### 7. Merge (after approval)
 ```bash
 gh pr merge --squash --subject "M<M>I<I>: <title>"
 ```
@@ -108,3 +113,5 @@ git checkout main && git pull origin main
 - Leaving uncommitted changes when creating PR
 - Not watching CI after pushing fixes
 - Branch name not matching the issue it solves
+- **Merging without waiting for review** — always wait for approval
+- **Typos in YAML variable references** — double-check `${{ matrix.key }}` matches the actual key name (singular vs plural)
