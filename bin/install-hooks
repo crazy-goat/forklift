@@ -1,5 +1,16 @@
 #!/bin/bash
 set -e
-cp bin/pre-push .git/hooks/pre-push
-chmod +x .git/hooks/pre-push
+
+SCRIPT_DIR="$(dirname "$0")"
+HOOKS_DIR="$SCRIPT_DIR/../.git/hooks"
+
+[[ -d "$HOOKS_DIR" ]] || exit 0
+
+if [[ -f "$HOOKS_DIR/pre-push" ]]; then
+    echo "Warning: $HOOKS_DIR/pre-push already exists, skipping."
+    exit 0
+fi
+
+cp "$SCRIPT_DIR/pre-push" "$HOOKS_DIR/pre-push"
+chmod +x "$HOOKS_DIR/pre-push"
 echo "Git hooks installed."

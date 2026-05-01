@@ -1,5 +1,8 @@
 #!/bin/bash
 set -e
+
+[[ -f vendor/bin/php-cs-fixer ]] || { echo "Skipping lint: dev tools not installed."; exit 0; }
+
 echo "Running composer lint..."
 composer lint
 echo "Lint passed."
