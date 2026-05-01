@@ -38,7 +38,7 @@ git pull origin main
 **Auto-pick mode (default):** Picks the lowest milestone + lowest issue number automatically.
 
 ```bash
-gh issue list --state open --json number,title,milestone --jq '
+gh issue list --state open --limit 100 --json number,title,milestone --jq '
   sort_by(.milestone.number, .number) | .[0] | {number, title}
 '
 ```
@@ -46,10 +46,10 @@ gh issue list --state open --json number,title,milestone --jq '
 **List mode (`list` argument):** Displays all open issues and lets the user pick.
 
 ```bash
-gh issue list --state open --json number,title,milestone,labels --jq '
+gh issue list --state open --limit 100 --json number,title,milestone --jq '
   sort_by(.milestone.number, .number) |
-  ["#", "Milestone", "Title", "Labels"],
-  (.[] | [.number, .milestone.title, .title, (.labels[].name // "-")]) |
+  ["#", "M", "Title"],
+  (.[] | [.number, "M\(.milestone.number)", .title]) |
   @tsv
 ' | column -t -s $'\t'
 ```
