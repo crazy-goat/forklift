@@ -6,8 +6,8 @@ namespace CrazyGoat\Forklift\Server\Protocol;
 
 class WebSocketFrame
 {
-    private const int MAX_7BIT = 125;
-    private const int MAX_16BIT = 65535;
+    private const MAX_7BIT = 125;
+    private const MAX_16BIT = 65535;
 
     public function __construct(
         public readonly int $opcode,
