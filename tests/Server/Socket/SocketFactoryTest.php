@@ -28,10 +28,25 @@ class SocketFactoryTest extends TestCase
         $this->assertInstanceOf(ForkSharedProxy::class, $proxy);
     }
 
-    public function testCreateReusePortFallbacksToForkShared(): void
+    public function testCreateReusePortReturnsReusePortWhenSupported(): void
     {
+        if (!(new ReusePortProxy())->isSupported()) {
+            $this->markTestSkipped('SO_REUSEPORT not supported on this platform');
+        }
+
         $proxy = SocketFactory::create(ProxyType::REUSE_PORT, 8080, ProtocolType::HTTP);
 
-        $this->assertTrue($proxy instanceof ReusePortProxy || $proxy instanceof ForkSharedProxy);
+        $this->assertInstanceOf(ReusePortProxy::class, $proxy);
+    }
+
+    public function testCreateReusePortFallsBackToForkSharedWhenNotSupported(): void
+    {
+        if ((new ReusePortProxy())->isSupported()) {
+            $this->markTestSkipped('SO_REUSEPORT is supported on this platform');
+        }
+
+        $proxy = SocketFactory::create(ProxyType::REUSE_PORT, 8080, ProtocolType::HTTP);
+
+        $this->assertInstanceOf(ForkSharedProxy::class, $proxy);
     }
 }
