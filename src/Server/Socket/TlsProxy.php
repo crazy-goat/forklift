@@ -25,6 +25,9 @@ class TlsProxy implements SocketProxyInterface
         return $this->inner->createSocket($port, $protocol);
     }
 
+    /**
+     * @throws SocketCreationException
+     */
     public function accept(Socket $socket): Connection
     {
         $connection = $this->inner->accept($socket);
@@ -36,23 +39,49 @@ class TlsProxy implements SocketProxyInterface
         $stream = @\socket_export_stream($socketResource);
 
         if ($stream === false) {
-            throw new SocketCreationException('Failed to export socket to stream');
+            $error = \error_get_last();
+
+            throw new SocketCreationException(
+                \is_array($error) ? $error['message'] : 'Failed to export socket to stream',
+            );
         }
 
         \stream_set_timeout($stream, 30);
 
-        \stream_context_set_option($stream, 'ssl', 'local_cert', $this->certFile);
-        \stream_context_set_option($stream, 'ssl', 'local_pk', $this->keyFile);
+        if (!\stream_context_set_option($stream, 'ssl', 'local_cert', $this->certFile)) {
+            \fclose($stream);
+
+            throw new SocketCreationException('Failed to set SSL context option: local_cert');
+        }
+
+        if (!\stream_context_set_option($stream, 'ssl', 'local_pk', $this->keyFile)) {
+            \fclose($stream);
+
+            throw new SocketCreationException('Failed to set SSL context option: local_pk');
+        }
 
         foreach ($this->sslContextOptions as $option => $value) {
-            \stream_context_set_option($stream, 'ssl', $option, $value);
+            if (!\stream_context_set_option($stream, 'ssl', $option, $value)) {
+                \fclose($stream);
+
+                throw new SocketCreationException(
+                    \sprintf('Failed to set SSL context option: %s', $option),
+                );
+            }
         }
 
         $result = @\stream_socket_enable_crypto($stream, true, \STREAM_CRYPTO_METHOD_TLS_SERVER);
 
         if ($result === false) {
+            $error = \error_get_last();
             \fclose($stream);
-            throw new SocketCreationException('TLS handshake failed');
+
+            throw new SocketCreationException(
+                \sprintf(
+                    'TLS handshake failed: %s',
+                    \is_array($error) ? $error['message'] : 'unknown error',
+                ),
+            );
         }
 
         return $connection;
