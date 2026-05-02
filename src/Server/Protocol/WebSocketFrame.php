@@ -56,7 +56,7 @@ class WebSocketFrame
 
         $value = $unpacked[1];
 
-        return \is_int($value) ? $value : null;
+        return \is_int($value) && $value >= 0 ? $value : null;
     }
 
     public static function decode(string $data): ?self
@@ -138,28 +138,31 @@ class WebSocketFrame
         $masked = (bool) ($secondByte & 0x80);
 
         $headerSize = 2;
+        $offset = 2;
         $payloadLength = $payloadLengthCode;
 
         if ($payloadLengthCode === 126) {
-            if ($len < $headerSize + 2) {
+            if ($len < $offset + 2) {
                 return null;
             }
-            $read = self::readUint16($data, 2);
+            $read = self::readUint16($data, $offset);
             if ($read === null) {
                 return null;
             }
             $payloadLength = $read;
             $headerSize += 2;
+            $offset += 2;
         } elseif ($payloadLengthCode === 127) {
-            if ($len < $headerSize + 8) {
+            if ($len < $offset + 8) {
                 return null;
             }
-            $read = self::readUint64($data, 2);
+            $read = self::readUint64($data, $offset);
             if ($read === null) {
                 return null;
             }
             $payloadLength = $read;
             $headerSize += 8;
+            $offset += 8;
         }
 
         if ($masked) {

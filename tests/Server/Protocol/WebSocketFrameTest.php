@@ -202,4 +202,18 @@ class WebSocketFrameTest extends TestCase
 
         $this->assertSame(0x81, \ord($encoded[0]));
     }
+
+    public function testDecodeReturnsNullFor64BitLengthWithMsbSet(): void
+    {
+        $frame = "\x81\xff\x80\x00\x00\x00\x00\x00\x00\x00" . 'Hello';
+
+        $this->assertNull(WebSocketFrame::decode($frame));
+    }
+
+    public function testFrameSizeReturnsNullFor64BitLengthWithMsbSet(): void
+    {
+        $frame = "\x81\xff\x80\x00\x00\x00\x00\x00\x00\x00" . 'Hello';
+
+        $this->assertNull(WebSocketFrame::frameSize($frame));
+    }
 }
